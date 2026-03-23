@@ -12,6 +12,7 @@ export default function Dashboard() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => { fetchAllData(); }, []);
 
     const fetchAllData = async () => {

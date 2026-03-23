@@ -19,6 +19,7 @@ export default function Home() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => { fetchProducts(); }, [search, category]);
 
     const fetchProducts = async () => {
