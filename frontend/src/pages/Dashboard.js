@@ -17,8 +17,8 @@ export default function Dashboard() {
     const fetchAllData = async () => {
         try {
             const [predRes, recRes, orderRes] = await Promise.all([
-                axios.get(`http://localhost:5001/predict/${user.id}`),
-                axios.get(`http://localhost:5001/recommend/${user.id}`),
+                axios.get(`https://smartcart-ai-module.onrender.com/predict/${user.id}`),
+                axios.get(`https://smartcart-ai-module.onrender.com/recommend/${user.id}`),
                 API.get('/orders/myorders')
             ]);
             setPredictions(predRes.data.predictions);
