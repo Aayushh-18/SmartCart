@@ -91,6 +91,7 @@ export default function Home() {
                     <span style={styles.navUser}>Hi, {user?.name}</span>
                     <button style={styles.navBtn} onClick={() => navigate('/dashboard')}>Dashboard</button>
                     <button style={styles.navLogout} onClick={() => { logout(); navigate('/'); }}>Logout</button>
+                    <button style={styles.navBtn} onClick={() => navigate('/feedback')}>Feedback</button>
                 </div>
             </div>
 

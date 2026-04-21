@@ -1,3 +1,4 @@
+import Feedback from './pages/Feedback';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
@@ -17,6 +18,7 @@ function AppRoutes() {
             <Route path="/register" element={<Register />} />
             <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+            <Route path="/feedback" element={<PrivateRoute><Feedback /></PrivateRoute>} />
         </Routes>
     );
 }
