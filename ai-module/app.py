@@ -24,18 +24,20 @@ except ImportError:
     pass
 
 # ── Optional: google-generativeai ────────────────────────────────
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GENAI_IMPORT_ERROR = None
 try:
     import google.generativeai as genai
     GENAI_AVAILABLE = True
-except ImportError:
+except Exception as e:
     genai = None
     GENAI_AVAILABLE = False
-    print("[app] google-generativeai not installed — /chat will return 503")
+    GENAI_IMPORT_ERROR = str(e)
+    print(f"[app] google-generativeai import failed: {e}")
 
 # ── Gemini model setup ────────────────────────────────────────────
 _gemini_model = None
 if GENAI_AVAILABLE:
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
     if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
         try:
             genai.configure(api_key=GEMINI_API_KEY)
@@ -154,6 +156,9 @@ def chat(req: ChatRequest):
         key_status = "empty or not found"
         if GEMINI_API_KEY:
             key_status = f"found (starts with {GEMINI_API_KEY[:4]}), but model failed to load"
+        
+        if GENAI_IMPORT_ERROR:
+            key_status = f"module failed to import: {GENAI_IMPORT_ERROR}"
         
         raise HTTPException(
             status_code=503,
