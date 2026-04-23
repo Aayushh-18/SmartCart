@@ -11,30 +11,54 @@ Endpoints:
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import List, Dict, Any
 from predictor import predict_refill
 from recommender import get_recommendations
-import google.generativeai as genai
-from pymongo import MongoClient
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
+# ── Optional: python-dotenv ───────────────────────────────────────
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
-# ── Gemini setup ──────────────────────────────────────────────────
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
-    genai.configure(api_key=GEMINI_API_KEY)
-    _gemini_model = genai.GenerativeModel("gemini-1.5-flash")
-else:
-    _gemini_model = None
+# ── Optional: google-generativeai ────────────────────────────────
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except ImportError:
+    genai = None
+    GENAI_AVAILABLE = False
+    print("[app] google-generativeai not installed — /chat will return 503")
+
+# ── Gemini model setup ────────────────────────────────────────────
+_gemini_model = None
+if GENAI_AVAILABLE:
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+    if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
+        try:
+            genai.configure(api_key=GEMINI_API_KEY)
+            _gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+            print("[app] Gemini model loaded ✅")
+        except Exception as e:
+            print(f"[app] Gemini setup failed: {e}")
+    else:
+        print("[app] GEMINI_API_KEY not set — /chat disabled")
 
 # ── MongoDB (for chat context) ────────────────────────────────────
-MONGO_URI = os.getenv(
-    "MONGO_URI",
-    "mongodb+srv://SmartCart:aayush182005@cluster0.n7rlxnr.mongodb.net/smartcart?retryWrites=true&w=majority&appName=Cluster0",
-)
-_mongo_client = MongoClient(MONGO_URI)
-_db = _mongo_client["smartcart"]
+try:
+    from pymongo import MongoClient
+    MONGO_URI = os.getenv(
+        "MONGO_URI",
+        "mongodb+srv://SmartCart:aayush182005@cluster0.n7rlxnr.mongodb.net/smartcart?retryWrites=true&w=majority&appName=Cluster0",
+    )
+    _mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+    _db = _mongo_client["smartcart"]
+    print("[app] MongoDB connected ✅")
+except Exception as e:
+    _db = None
+    print(f"[app] MongoDB connection failed: {e}")
 
 # ── FastAPI app ───────────────────────────────────────────────────
 app = FastAPI(
@@ -55,7 +79,7 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     userId: str
     message: str
-    history: list[dict] = []   # [{"role": "user"|"model", "parts": "..."}]
+    history: List[Dict[str, Any]] = []
 
 
 class ChatResponse(BaseModel):
@@ -65,14 +89,20 @@ class ChatResponse(BaseModel):
 # ── Helpers ───────────────────────────────────────────────────────
 def _build_system_prompt(user_id: str) -> str:
     """Build a context-rich system prompt with live product catalog."""
-    products = list(_db.products.find({}, {"name": 1, "category": 1, "price": 1, "unit": 1, "stock": 1}))
-    catalog_lines = []
-    for p in products:
-        stock_status = "in stock" if p.get("stock", 0) > 0 else "out of stock"
-        catalog_lines.append(
-            f"- {p['name']} ({p['category']}) — ₹{p['price']}/{p['unit']}, {stock_status}"
-        )
-    catalog_text = "\n".join(catalog_lines) if catalog_lines else "No products available right now."
+    catalog_text = "No products available right now."
+    if _db is not None:
+        try:
+            products = list(_db.products.find({}, {"name": 1, "category": 1, "price": 1, "unit": 1, "stock": 1}))
+            catalog_lines = []
+            for p in products:
+                stock_status = "in stock" if p.get("stock", 0) > 0 else "out of stock"
+                catalog_lines.append(
+                    f"- {p['name']} ({p['category']}) — Rs.{p['price']}/{p['unit']}, {stock_status}"
+                )
+            if catalog_lines:
+                catalog_text = "\n".join(catalog_lines)
+        except Exception:
+            pass
 
     return f"""You are SmartCart AI, a friendly and knowledgeable grocery shopping assistant.
 Your job is to help customers find the right products, suggest substitutes, explain pricing, 
