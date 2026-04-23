@@ -3,6 +3,3 @@ uvicorn[standard]>=0.29.0
 pymongo>=4.7.0
 python-dotenv>=1.0.0
 google-generativeai>=0.7.0
-# Optional: enables semantic embedding recommendations (heavy ~500MB, skip if memory-constrained)
-sentence-transformers>=3.0.0
-numpy>=1.26.0
