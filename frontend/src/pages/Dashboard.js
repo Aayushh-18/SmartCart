@@ -111,7 +111,7 @@ export default function Dashboard() {
                         <div style={styles.card}>
                             <div style={styles.cardHeader}>
                                 <div style={styles.cardTitle}>Recommended For You</div>
-                                <div style={styles.cardBadge}>AI picks</div>
+                                <div style={styles.cardBadge}>⚡ Embedding AI</div>
                             </div>
                             {recommendations.length === 0 ? (
                                 <div style={styles.empty}>Not enough data yet for recommendations</div>
@@ -120,7 +120,7 @@ export default function Dashboard() {
                                     <div key={i} style={styles.recItem}>
                                         <div style={styles.recLeft}>
                                             <div style={styles.recName}>{r.productName}</div>
-                                            <div style={styles.recCat}>{r.category}</div>
+                                            <div style={styles.recCat}>{r.category} · {r.method === 'hybrid-embedding' ? '🧠 Hybrid AI' : 'Collaborative'}</div>
                                         </div>
                                         <div style={styles.recPrice}>₹{r.price}</div>
                                     </div>

@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
+import ChatBot from './components/ChatBot';
 
 const PrivateRoute = ({ children }) => {
     const { user } = useAuth();
@@ -28,6 +29,7 @@ export default function App() {
         <AuthProvider>
             <BrowserRouter>
                 <AppRoutes />
+                <ChatBot />
             </BrowserRouter>
         </AuthProvider>
     );
