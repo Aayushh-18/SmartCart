@@ -103,8 +103,13 @@ def get_recommendations(user_id: str) -> list:
     Return top-5 product recommendations for *user_id* using the
     hybrid collaborative-filtering + embedding approach.
     """
+    try:
+        query_id = ObjectId(user_id)
+    except Exception:
+        query_id = user_id
+
     # ── Gather user purchase history ──────────────────────────────
-    user_orders = list(db.orders.find({"userId": user_id}))
+    user_orders = list(db.orders.find({"userId": query_id}))
     user_products: set[str] = set()
     for order in user_orders:
         for item in order["items"]:
@@ -115,7 +120,7 @@ def get_recommendations(user_id: str) -> list:
 
     # ── Load all products ─────────────────────────────────────────
     all_products = list(db.products.find({}))
-    all_orders = list(db.orders.find({"userId": {"$ne": user_id}}))
+    all_orders = list(db.orders.find({"userId": {"$ne": query_id}}))
 
     # ── Compute individual scores ─────────────────────────────────
     collab = _collab_scores(user_products, all_orders)

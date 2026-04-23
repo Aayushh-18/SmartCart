@@ -8,7 +8,12 @@ client = MongoClient(MONGO_URI)
 db = client["smartcart"]
 
 def predict_refill(user_id):
-    orders = list(db.orders.find({"userId": user_id}))
+    try:
+        query_id = ObjectId(user_id)
+    except Exception:
+        query_id = user_id
+        
+    orders = list(db.orders.find({"userId": query_id}))
 
     if not orders:
         return []
