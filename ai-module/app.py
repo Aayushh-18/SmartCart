@@ -23,30 +23,18 @@ try:
 except ImportError:
     pass
 
-# ── Optional: google-generativeai ────────────────────────────────
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GENAI_IMPORT_ERROR = None
+# ── Optional: Groq (free LLM API — no billing required) ─────────
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+_groq_client = None
 try:
-    import google.generativeai as genai
-    GENAI_AVAILABLE = True
-except Exception as e:
-    genai = None
-    GENAI_AVAILABLE = False
-    GENAI_IMPORT_ERROR = str(e)
-    print(f"[app] google-generativeai import failed: {e}")
-
-# ── Gemini model setup ────────────────────────────────────────────
-_gemini_model = None
-if GENAI_AVAILABLE:
-    if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
-        try:
-            genai.configure(api_key=GEMINI_API_KEY)
-            _gemini_model = genai.GenerativeModel("gemini-1.5-flash-latest")
-            print("[app] Gemini model loaded ✅")
-        except Exception as e:
-            print(f"[app] Gemini setup failed: {e}")
+    from groq import Groq
+    if GROQ_API_KEY:
+        _groq_client = Groq(api_key=GROQ_API_KEY)
+        print("[app] Groq client loaded ✅")
     else:
-        print("[app] GEMINI_API_KEY not set — /chat disabled")
+        print("[app] GROQ_API_KEY not set — /chat disabled")
+except Exception as e:
+    print(f"[app] Groq import failed: {e}")
 
 # ── MongoDB (for chat context) ────────────────────────────────────
 try:
@@ -152,36 +140,36 @@ def recommend(user_id: str):
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
-    if _gemini_model is None:
-        key_status = "empty or not found"
-        if GEMINI_API_KEY:
-            key_status = f"found (starts with {GEMINI_API_KEY[:4]}), but model failed to load"
-        
-        if GENAI_IMPORT_ERROR:
-            key_status = f"module failed to import: {GENAI_IMPORT_ERROR}"
-        
+    if _groq_client is None:
         raise HTTPException(
             status_code=503,
-            detail=f"Gemini API key issue: {key_status}. Please check Render environment variables.",
+            detail="GROQ_API_KEY not configured. Set it in Render environment variables.",
         )
 
     try:
         system_prompt = _build_system_prompt(req.userId)
 
         # Reconstruct conversation history for multi-turn chat
-        history = []
+        messages = [{"role": "system", "content": system_prompt}]
         for turn in req.history:
-            history.append({"role": turn["role"], "parts": [turn["parts"]]})
+            role = turn.get("role", "user")
+            # Groq uses 'assistant' not 'model'
+            if role == "model":
+                role = "assistant"
+            content = turn.get("parts", turn.get("content", ""))
+            if isinstance(content, list):
+                content = content[0] if content else ""
+            messages.append({"role": role, "content": str(content)})
 
-        chat_session = _gemini_model.start_chat(history=history)
+        messages.append({"role": "user", "content": req.message})
 
-        # Prepend system context to the first user message only when history is empty
-        user_message = req.message
-        if not req.history:
-            user_message = system_prompt + "\n\nUser: " + req.message
-
-        response = chat_session.send_message(user_message)
-        reply = response.text.strip()
+        response = _groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            max_tokens=256,
+            temperature=0.7,
+        )
+        reply = response.choices[0].message.content.strip()
 
         return ChatResponse(reply=reply)
 
