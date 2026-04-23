@@ -12,7 +12,7 @@ method dominates.
 from pymongo import MongoClient
 from bson import ObjectId
 from collections import defaultdict
-from embedder import embed, cosine_similarity
+from embedder import embed, cosine_similarity, EMBEDDINGS_AVAILABLE
 import os
 from dotenv import load_dotenv
 
@@ -67,8 +67,11 @@ def _embed_scores(user_products: set, all_products: list) -> dict:
     """
     For each product the user has NOT bought, compute the average
     cosine similarity to the products they HAVE bought.
-    Returns {productId: avg_similarity}.
+    Returns {productId: avg_similarity}, or {} if embeddings unavailable.
     """
+    if not EMBEDDINGS_AVAILABLE:
+        return {}
+
     bought_products = [
         p for p in all_products if str(p["_id"]) in user_products
     ]
