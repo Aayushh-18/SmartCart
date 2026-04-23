@@ -9,15 +9,15 @@ EMBEDDINGS_AVAILABLE is set to False and the recommender falls
 back to pure collaborative filtering automatically.
 """
 
-import numpy as np
-
 try:
+    import numpy as np
     from sentence_transformers import SentenceTransformer as _ST
     EMBEDDINGS_AVAILABLE = True
 except Exception:  # ImportError or any build failure
+    np = None
     _ST = None
     EMBEDDINGS_AVAILABLE = False
-    print("[embedder] sentence-transformers not available — using collaborative filtering only.")
+    print("[embedder] sentence-transformers/numpy not available — using collaborative filtering only.")
 
 # Lazy-loaded model and in-memory cache
 _model = None
@@ -46,7 +46,7 @@ def embed(text: str):
 
 def cosine_similarity(a, b) -> float:
     """Cosine similarity between two normalised unit vectors."""
-    if a is None or b is None:
+    if a is None or b is None or np is None:
         return 0.0
     return float(np.dot(a, b))
 
