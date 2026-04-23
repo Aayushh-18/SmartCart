@@ -151,9 +151,13 @@ def recommend(user_id: str):
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     if _gemini_model is None:
+        key_status = "empty or not found"
+        if GEMINI_API_KEY:
+            key_status = f"found (starts with {GEMINI_API_KEY[:4]}), but model failed to load"
+        
         raise HTTPException(
             status_code=503,
-            detail="Gemini API key not configured. Set GEMINI_API_KEY in ai-module/.env",
+            detail=f"Gemini API key issue: {key_status}. Please check Render environment variables.",
         )
 
     try:
