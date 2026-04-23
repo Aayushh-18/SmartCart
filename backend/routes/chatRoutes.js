@@ -4,7 +4,7 @@ const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-const AI_MODULE_URL = process.env.AI_MODULE_URL || "http://localhost:8000";
+const AI_MODULE_URL = process.env.AI_MODULE_URL || "https://smartcart-ai-module.onrender.com";
 
 /**
  * POST /api/chat
