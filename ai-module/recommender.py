@@ -14,9 +14,6 @@ from bson import ObjectId
 from collections import defaultdict
 from embedder import embed, cosine_similarity, EMBEDDINGS_AVAILABLE
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 MONGO_URI = os.getenv(
     "MONGO_URI",
