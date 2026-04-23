@@ -41,7 +41,7 @@ if GENAI_AVAILABLE:
     if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
         try:
             genai.configure(api_key=GEMINI_API_KEY)
-            _gemini_model = genai.GenerativeModel("gemini-pro")
+            _gemini_model = genai.GenerativeModel("gemini-2.0-flash")
             print("[app] Gemini model loaded ✅")
         except Exception as e:
             print(f"[app] Gemini setup failed: {e}")
